@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tip calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#eef3f0;--surface:#fbfdfb;--ink:#17302a;--muted:#5d746c;--line:#cfdcd5;--accent:#0f7a5c;--accent-ink:#ffffff;--total:#17302a;--total-ink:#f2faf6;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#0f1a17;--surface:#16251f;--ink:#e6f2ec;--muted:#8fa89e;--line:#2a3f37;--accent:#3ecf9f;--accent-ink:#06231a;--total:#e6f2ec;--total-ink:#10201a;}
+}
+:root[data-theme="dark"]{--bg:#0f1a17;--surface:#16251f;--ink:#e6f2ec;--muted:#8fa89e;--line:#2a3f37;--accent:#3ecf9f;--accent-ink:#06231a;--total:#e6f2ec;--total-ink:#10201a;}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,sans-serif;display:grid;place-items:center;padding:20px}
+main{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:28px 24px}
+h1{font-size:1.5rem;font-weight:800;margin:0 0 24px;letter-spacing:-.01em}
+label{display:block;font-weight:600;margin-bottom:8px}
+.bill{display:flex;align-items:center;border:2px solid var(--line);border-radius:12px;padding:0 14px;background:var(--bg)}
+.bill:focus-within{border-color:var(--accent)}
+.bill span{font-size:1.5rem;color:var(--muted);margin-right:6px}
+.bill input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:inherit;font-size:1.75rem;font-weight:600;padding:12px 0;outline:none}
+.row{display:flex;justify-content:space-between;align-items:baseline;margin:26px 0 10px}
+.row label{margin:0}
+.row output{font-size:1.5rem;font-weight:800;color:var(--accent)}
+input[type=range]{width:100%;accent-color:var(--accent);height:28px;margin:0}
+.scale{display:flex;justify-content:space-between;color:var(--muted);font-size:.8rem}
+.result{margin-top:28px;border-radius:14px;background:var(--total);color:var(--total-ink);padding:20px}
+.line{display:flex;justify-content:space-between;opacity:.8;margin-bottom:6px}
+.total{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid color-mix(in srgb,var(--total-ink) 25%,transparent);margin-top:10px;padding-top:12px}
+.total strong{font-size:2.25rem;font-weight:800;letter-spacing:-.02em}
+</style>
+</head>
+<body>
+<main>
+  <h1>Tip calculator</h1>
+  <label for="bill">Bill amount</label>
+  <div class="bill"><span>$</span><input id="bill" type="text" inputmode="decimal" placeholder="0.00" autocomplete="off"></div>
+
+  <div class="row"><label for="tip">Tip</label><output id="pct" for="tip">18%</output></div>
+  <input id="tip" type="range" min="0" max="40" step="1" value="18">
+  <div class="scale"><span>0%</span><span>20%</span><span>40%</span></div>
+
+  <div class="result" aria-live="polite">
+    <div class="line"><span>Tip</span><span id="tipAmt">$0.00</span></div>
+    <div class="line"><span>Bill</span><span id="billAmt">$0.00</span></div>
+    <div class="total"><span>Total</span><strong id="total">$0.00</strong></div>
+  </div>
+</main>
+<script>
+const bill=document.getElementById('bill'),tip=document.getElementById('tip');
+const fmt=n=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+function update(){
+  const b=Math.max(0,parseFloat(bill.value.replace(/[^0-9.]/g,''))||0);
+  const p=+tip.value,t=b*p/100;
+  document.getElementById('pct').textContent=p+'%';
+  document.getElementById('tipAmt').textContent=fmt(t);
+  document.getElementById('billAmt').textContent=fmt(b);
+  document.getElementById('total').textContent=fmt(b+t);
+}
+bill.addEventListener('input',update);tip.addEventListener('input',update);update();
+</script>
+</body>
+</html>
