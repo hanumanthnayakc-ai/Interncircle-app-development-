@@ -1,0 +1,446 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Quick Ten Quiz</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: one narrow column. Start card -> one question at a time with a progress strip -> results with a per-question review. */
+:root {
+  --bg: #EEF2F5;
+  --surface: #FFFFFF;
+  --surface-2: #E4EAEF;
+  --ink: #15212B;
+  --ink-soft: #566573;
+  --line: #CBD5DD;
+  --accent: #0B63A8;
+  --accent-ink: #FFFFFF;
+  --good: #17794D;
+  --good-bg: #E1F3EA;
+  --bad: #B3322F;
+  --bad-bg: #FAE6E5;
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E151B;
+    --surface: #16212A;
+    --surface-2: #213039;
+    --ink: #E8EEF2;
+    --ink-soft: #9DB0BE;
+    --line: #2E3F4B;
+    --accent: #62B4EC;
+    --accent-ink: #08202F;
+    --good: #52C98F;
+    --good-bg: #17352A;
+    --bad: #F2807B;
+    --bad-bg: #3A1F20;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E151B;
+  --surface: #16212A;
+  --surface-2: #213039;
+  --ink: #E8EEF2;
+  --ink-soft: #9DB0BE;
+  --line: #2E3F4B;
+  --accent: #62B4EC;
+  --accent-ink: #08202F;
+  --good: #52C98F;
+  --good-bg: #17352A;
+  --bad: #F2807B;
+  --bad-bg: #3A1F20;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  padding-block: 32px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.2; }
+p { margin: 0; }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+.num { font-variant-numeric: tabular-nums; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.btn {
+  align-self: flex-start;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 22px;
+  font-weight: 600;
+  font-size: 16px;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+
+/* start */
+.start h1 { font-size: clamp(28px, 6vw, 38px); }
+.start .lede { color: var(--ink-soft); max-width: 52ch; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 20px; color: var(--ink-soft); font-size: 14px; }
+.best { font-size: 14px; color: var(--ink-soft); }
+
+/* top bar */
+.top { display: flex; flex-direction: column; gap: 10px; }
+.top-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.track { height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+.fill { height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width 0.35s ease; }
+
+/* question */
+.q { font-size: clamp(20px, 4.4vw, 26px); }
+.opts { display: flex; flex-direction: column; gap: 10px; padding: 0; margin: 0; list-style: none; }
+.opt {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  text-align: left;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  min-width: 0;
+}
+.opt:hover:not(:disabled) { border-color: var(--accent); }
+.opt:disabled { cursor: default; }
+.key {
+  flex: none;
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  display: grid; place-items: center;
+  font-size: 13px; font-weight: 600;
+  color: var(--ink-soft);
+}
+.label { padding-top: 2px; min-width: 0; overflow-wrap: anywhere; }
+.opt.correct { border-color: var(--good); background: var(--good-bg); }
+.opt.correct .key { background: var(--good); color: var(--surface); }
+.opt.wrong { border-color: var(--bad); background: var(--bad-bg); }
+.opt.wrong .key { background: var(--bad); color: var(--surface); }
+.opt.dim { opacity: 0.6; }
+
+.feedback { border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.feedback.good { background: var(--good-bg); }
+.feedback.bad { background: var(--bad-bg); }
+.feedback strong { font-family: var(--font-display); font-size: 17px; }
+.feedback.good strong { color: var(--good); }
+.feedback.bad strong { color: var(--bad); }
+.feedback span { color: var(--ink); }
+
+.actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.hint { font-size: 13px; color: var(--ink-soft); }
+
+/* results */
+.score-row { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.big { font-family: var(--font-display); font-weight: 700; font-size: clamp(52px, 14vw, 76px); line-height: 1; }
+.big small { font-size: 0.4em; color: var(--ink-soft); font-weight: 500; }
+.pct { font-size: 20px; color: var(--ink-soft); }
+.verdict { font-size: 18px; max-width: 48ch; }
+.review { display: flex; flex-direction: column; gap: 0; padding: 0; margin: 0; list-style: none; }
+.review li { display: grid; grid-template-columns: 28px 1fr; gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); min-width: 0; }
+.mark { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 14px; font-weight: 700; margin-top: 1px; }
+.mark.ok { background: var(--good-bg); color: var(--good); }
+.mark.no { background: var(--bad-bg); color: var(--bad); }
+.review .rq { font-weight: 600; }
+.review .ra { color: var(--ink-soft); font-size: 14px; overflow-wrap: anywhere; }
+.review .ra b { color: var(--ink); font-weight: 600; }
+
+@media (max-width: 480px) {
+  .card { padding: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fill { transition: none; }
+}
+</style>
+
+<div class="wrap">
+
+  <section id="start" class="card start">
+    <span class="eyebrow">General knowledge</span>
+    <h1>Quick Ten Quiz</h1>
+    <p class="lede">Ten multiple-choice questions on science, geography, history and books. You see the right answer and a short explanation after every question, then a full review at the end.</p>
+    <div class="facts"><span>10 questions</span><span>4 options each</span><span>About 3 minutes</span></div>
+    <p class="best" id="best" hidden></p>
+    <button class="btn" id="startBtn" type="button">Start quiz</button>
+  </section>
+
+  <section id="quiz" hidden>
+    <div class="top">
+      <div class="top-row">
+        <span class="eyebrow num" id="progressText">Question 1 of 10</span>
+        <span class="eyebrow num" id="scoreText">Score 0</span>
+      </div>
+      <div class="track" role="progressbar" aria-label="Quiz progress" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" id="track"><div class="fill" id="fill"></div></div>
+    </div>
+    <div class="card" style="margin-top:20px">
+      <h2 class="q" id="qText"></h2>
+      <ul class="opts" id="opts"></ul>
+      <div id="feedback" aria-live="polite"></div>
+      <div class="actions">
+        <button class="btn" id="nextBtn" type="button" hidden>Next question</button>
+        <span class="hint" id="hint">Pick an answer, or press 1 to 4.</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="results" hidden>
+    <div class="card">
+      <span class="eyebrow">Your result</span>
+      <div class="score-row">
+        <div class="big num" id="finalScore"></div>
+        <div class="pct num" id="finalPct"></div>
+      </div>
+      <p class="verdict" id="verdict"></p>
+      <p class="best" id="bestEnd"></p>
+      <button class="btn" id="againBtn" type="button">Try again</button>
+    </div>
+    <div class="card">
+      <h3>Review</h3>
+      <ol class="review" id="review"></ol>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  var QUESTIONS = [
+    { q: "Which planet in our solar system has the most confirmed moons?", a: ["Saturn", "Jupiter", "Uranus", "Neptune"],
+      why: "Saturn holds the record, with well over 200 confirmed moons, ahead of Jupiter." },
+    { q: "What is the capital city of Australia?", a: ["Canberra", "Sydney", "Melbourne", "Perth"],
+      why: "Canberra was purpose-built as the capital as a compromise between rivals Sydney and Melbourne." },
+    { q: "Which chemical symbol stands for gold?", a: ["Au", "Ag", "Gd", "Go"],
+      why: "Au comes from the Latin word aurum. Ag is silver." },
+    { q: "Who wrote the novel Pride and Prejudice?", a: ["Jane Austen", "Charlotte Bronte", "George Eliot", "Mary Shelley"],
+      why: "Jane Austen published it in 1813." },
+    { q: "Which is the largest ocean on Earth?", a: ["Pacific Ocean", "Atlantic Ocean", "Indian Ocean", "Arctic Ocean"],
+      why: "The Pacific covers about a third of the planet's surface." },
+    { q: "In which year did humans first land on the Moon?", a: ["1969", "1961", "1972", "1965"],
+      why: "Apollo 11 landed in July 1969. Neil Armstrong and Buzz Aldrin walked on the surface." },
+    { q: "Which is the hardest naturally occurring substance?", a: ["Diamond", "Quartz", "Topaz", "Steel"],
+      why: "Diamond rates 10 on the Mohs scale, the top of the scale." },
+    { q: "Which river flows through the city of Cairo?", a: ["The Nile", "The Tigris", "The Euphrates", "The Congo"],
+      why: "Cairo sits on the Nile, just south of where the river fans out into its delta." },
+    { q: "How many bones does a typical adult human body have?", a: ["206", "150", "256", "312"],
+      why: "Babies are born with about 300 softer bones, and many fuse together as they grow." },
+    { q: "Roughly how fast does light travel in a vacuum?", a: ["300,000 km per second", "3,000 km per second", "30,000 km per second", "3,000,000 km per second"],
+      why: "Light moves at about 299,792 km per second, which rounds to 300,000." }
+  ];
+
+  var BEST_KEY = "quick-ten-quiz-best";
+  var els = {};
+  ["start","quiz","results","startBtn","progressText","scoreText","track","fill","qText","opts","feedback","nextBtn","hint","finalScore","finalPct","verdict","best","bestEnd","againBtn","review"].forEach(function (id) { els[id] = document.getElementById(id); });
+
+  var state = { idx: 0, score: 0, locked: false, items: [], picks: [] };
+
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function loadBest() {
+    try { var v = localStorage.getItem(BEST_KEY); return v === null ? null : parseInt(v, 10); } catch (e) { return null; }
+  }
+  function saveBest(v) {
+    try { localStorage.setItem(BEST_KEY, String(v)); } catch (e) {}
+  }
+  function showBest() {
+    var b = loadBest();
+    if (b === null || isNaN(b)) { els.best.hidden = true; return; }
+    els.best.hidden = false;
+    els.best.textContent = "Your best score: " + b + " out of " + QUESTIONS.length;
+  }
+
+  function show(which) {
+    els.start.hidden = which !== "start";
+    els.quiz.hidden = which !== "quiz";
+    els.results.hidden = which !== "results";
+  }
+
+  function begin() {
+    state.idx = 0; state.score = 0; state.picks = [];
+    state.items = QUESTIONS.map(function (item) {
+      var opts = item.a.map(function (text, i) { return { text: text, correct: i === 0 }; });
+      return { q: item.q, why: item.why, opts: shuffle(opts) };
+    });
+    show("quiz");
+    renderQuestion();
+  }
+
+  function renderQuestion() {
+    var total = state.items.length;
+    var item = state.items[state.idx];
+    state.locked = false;
+    els.progressText.textContent = "Question " + (state.idx + 1) + " of " + total;
+    els.scoreText.textContent = "Score " + state.score;
+    els.fill.style.width = (state.idx / total * 100) + "%";
+    els.track.setAttribute("aria-valuenow", String(state.idx));
+    els.qText.textContent = item.q;
+    els.feedback.innerHTML = "";
+    els.nextBtn.hidden = true;
+    els.hint.hidden = false;
+    els.opts.innerHTML = "";
+    item.opts.forEach(function (o, i) {
+      var li = document.createElement("li");
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "opt";
+      b.dataset.i = String(i);
+      var k = document.createElement("span");
+      k.className = "key"; k.textContent = String(i + 1);
+      var l = document.createElement("span");
+      l.className = "label"; l.textContent = o.text;
+      b.appendChild(k); b.appendChild(l);
+      b.addEventListener("click", function () { choose(i); });
+      li.appendChild(b);
+      els.opts.appendChild(li);
+    });
+  }
+
+  function choose(i) {
+    if (state.locked) return;
+    state.locked = true;
+    var item = state.items[state.idx];
+    var picked = item.opts[i];
+    var correctIdx = 0;
+    item.opts.forEach(function (o, n) { if (o.correct) correctIdx = n; });
+    if (picked.correct) state.score++;
+    state.picks.push(i);
+
+    var buttons = els.opts.querySelectorAll(".opt");
+    buttons.forEach(function (b, n) {
+      b.disabled = true;
+      if (n === correctIdx) b.classList.add("correct");
+      else if (n === i) b.classList.add("wrong");
+      else b.classList.add("dim");
+    });
+
+    var good = picked.correct;
+    var box = document.createElement("div");
+    box.className = "feedback " + (good ? "good" : "bad");
+    var head = document.createElement("strong");
+    head.textContent = good ? "Correct" : "Not quite. The answer is " + item.opts[correctIdx].text + ".";
+    var body = document.createElement("span");
+    body.textContent = item.why;
+    box.appendChild(head); box.appendChild(body);
+    els.feedback.innerHTML = "";
+    els.feedback.appendChild(box);
+
+    els.scoreText.textContent = "Score " + state.score;
+    els.fill.style.width = ((state.idx + 1) / state.items.length * 100) + "%";
+    els.hint.hidden = true;
+    els.nextBtn.hidden = false;
+    els.nextBtn.textContent = state.idx === state.items.length - 1 ? "See results" : "Next question";
+    els.nextBtn.focus();
+  }
+
+  function next() {
+    if (!state.locked) return;
+    if (state.idx === state.items.length - 1) { finish(); return; }
+    state.idx++;
+    renderQuestion();
+  }
+
+  function verdictFor(score, total) {
+    var p = score / total;
+    if (p === 1) return "Perfect score. Every answer was right.";
+    if (p >= 0.8) return "Excellent. You know your facts.";
+    if (p >= 0.6) return "Solid result. A few more rounds and you will have it.";
+    if (p >= 0.4) return "A fair start. The review below shows what to look at again.";
+    return "Tough round. Read the review and try again.";
+  }
+
+  function finish() {
+    var total = state.items.length;
+    show("results");
+    els.finalScore.innerHTML = "";
+    els.finalScore.appendChild(document.createTextNode(String(state.score)));
+    var small = document.createElement("small");
+    small.textContent = " / " + total;
+    els.finalScore.appendChild(small);
+    els.finalPct.textContent = Math.round(state.score / total * 100) + "% correct";
+    els.verdict.textContent = verdictFor(state.score, total);
+
+    var prev = loadBest();
+    if (prev === null || isNaN(prev) || state.score > prev) {
+      saveBest(state.score);
+      els.bestEnd.textContent = prev === null || isNaN(prev) ? "Saved as your best score." : "New best score. Your previous best was " + prev + ".";
+    } else {
+      els.bestEnd.textContent = "Your best score is " + prev + " out of " + total + ".";
+    }
+
+    els.review.innerHTML = "";
+    state.items.forEach(function (item, n) {
+      var pick = item.opts[state.picks[n]];
+      var right = item.opts.filter(function (o) { return o.correct; })[0];
+      var ok = pick.correct;
+      var li = document.createElement("li");
+      var m = document.createElement("span");
+      m.className = "mark " + (ok ? "ok" : "no");
+      m.textContent = ok ? "✓" : "✗";
+      m.setAttribute("aria-label", ok ? "Correct" : "Incorrect");
+      var d = document.createElement("div");
+      var q = document.createElement("div");
+      q.className = "rq"; q.textContent = (n + 1) + ". " + item.q;
+      var a = document.createElement("div");
+      a.className = "ra";
+      if (ok) {
+        a.innerHTML = "Your answer: <b></b>";
+        a.querySelector("b").textContent = pick.text;
+      } else {
+        a.innerHTML = "You chose <b class=\"c1\"></b>. Correct answer: <b class=\"c2\"></b>";
+        a.querySelector(".c1").textContent = pick.text;
+        a.querySelector(".c2").textContent = right.text;
+      }
+      d.appendChild(q); d.appendChild(a);
+      li.appendChild(m); li.appendChild(d);
+      els.review.appendChild(li);
+    });
+    window.scrollTo(0, 0);
+  }
+
+  els.startBtn.addEventListener("click", begin);
+  els.nextBtn.addEventListener("click", next);
+  els.againBtn.addEventListener("click", function () { showBest(); begin(); });
+
+  document.addEventListener("keydown", function (e) {
+    if (els.quiz.hidden || state.locked) return;
+    var n = parseInt(e.key, 10);
+    if (n >= 1 && n <= 4) choose(n - 1);
+  });
+
+  showBest();
+  show("start");
+})();
+</script>
+
+</body></html>
